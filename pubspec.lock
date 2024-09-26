@@ -96,14 +96,22 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  groq:
+    dependency: "direct main"
+    description:
+      name: groq
+      sha256: "82747add424c96e43de8580e806941960de0cadd21e5d1c8e297036762137cfd"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.7"
   http:
     dependency: "direct main"
     description:
       name: http
-      sha256: "5895291c13fa8a3bd82e76d5627f69e0d85ca6a30dcac95c4ea19a5d555879c2"
+      sha256: b9c29a161230ee03d3ccf545097fccd9b87a5264228c5d348202e0f0c28f9010
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.6"
+    version: "1.2.2"
   http_parser:
     dependency: transitive
     description:

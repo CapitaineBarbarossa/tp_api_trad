@@ -12,12 +12,22 @@ class HomeScreenState extends State<HomeScreen> {
   final TranslationService _translationService = TranslationService();
   final TextEditingController _textController = TextEditingController();
   String _translatedText = '';
+  String _selectedLanguage = 'English'; // Langue par défaut
+
+  // Liste des langues disponibles
+  final List<String> _languages = [
+    'English',
+    'French',
+    'Spanish',
+    'German',
+    'Italian'
+  ];
 
   void _translate() async {
     final text = _textController.text;
     if (text.isNotEmpty) {
-      final translation = await _translationService.translate(
-          text, 'French'); // Vous pouvez changer 'French' selon vos besoins
+      final translation =
+          await _translationService.translate(text, _selectedLanguage);
       setState(() {
         _translatedText = translation;
       });
@@ -37,16 +47,31 @@ class HomeScreenState extends State<HomeScreen> {
             TextField(
               controller: _textController,
               decoration: const InputDecoration(
-                hintText: 'Enter text to translate',
+                hintText: 'Ecris le texte à traduire',
               ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButton<String>(
+              value: _selectedLanguage,
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedLanguage = newValue!;
+                });
+              },
+              items: _languages.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _translate,
-              child: const Text('Translate'),
+              child: const Text('Traduire'),
             ),
             const SizedBox(height: 16),
-            Text('Translated text: $_translatedText'),
+            Text('Traduction ($_selectedLanguage): $_translatedText'),
           ],
         ),
       ),
