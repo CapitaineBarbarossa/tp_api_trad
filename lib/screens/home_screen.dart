@@ -18,8 +18,8 @@ class HomeScreenState extends State<HomeScreen> {
   final TranslationService _translationService = TranslationService();
   final StorageService _storageService = StorageService();
 
-  void _handleTranslation(String text) async {
-    final result = await _translationService.translate(text);
+  void _handleTranslation(String text, String targetLanguage) async {
+    final result = await _translationService.translate(text, targetLanguage);
     setState(() {
       _translatedText = result;
     });

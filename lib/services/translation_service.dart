@@ -3,9 +3,10 @@ import 'dart:convert';
 
 class TranslationService {
   final String _baseUrl = 'https://api.groq.com/v1/translate';
-  final String _apiKey = 'VOTRE_CLE_API_GROQ';
+  final String _apiKey =
+      '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';
 
-  Future<String> translate(String text) async {
+  Future<String> translate(String text, String targetLanguage) async {
     try {
       final response = await http.post(
         Uri.parse(_baseUrl),
