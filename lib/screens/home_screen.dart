@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/translation_service.dart';
+import '../services/correction_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,11 +11,14 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   final TranslationService _translationService = TranslationService();
-  final TextEditingController _textController = TextEditingController();
+  final CorrectionService _correctionService = CorrectionService();
+  final TextEditingController _translationController = TextEditingController();
+  final TextEditingController _correctionController = TextEditingController();
   String _translatedText = '';
-  String _selectedLanguage = 'English'; // Langue par défaut
+  String _correctedText = '';
+  String _selectedLanguage = 'English'; // Default language
+  bool _isLoading = false;
 
-  // Liste des langues disponibles
   final List<String> _languages = [
     'English',
     'French',
@@ -24,13 +28,40 @@ class HomeScreenState extends State<HomeScreen> {
   ];
 
   void _translate() async {
-    final text = _textController.text;
+    final text = _translationController.text;
     if (text.isNotEmpty) {
-      final translation =
-          await _translationService.translate(text, _selectedLanguage);
-      setState(() {
-        _translatedText = translation;
-      });
+      setState(() => _isLoading = true);
+      try {
+        final translation = await _translationService.translate(text, _selectedLanguage);
+        setState(() {
+          _translatedText = translation;
+        });
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Translation error: $e')),
+        );
+      } finally {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _correctText() async {
+    final text = _correctionController.text;
+    if (text.isNotEmpty) {
+      setState(() => _isLoading = true);
+      try {
+        final correctedText = await _correctionService.correctText(text, _selectedLanguage);
+        setState(() {
+          _correctedText = correctedText;
+        });
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Correction error: $e')),
+        );
+      } finally {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -38,43 +69,90 @@ class HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Translate App'),
+        title: const Text('Translate & Correct App'),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Text('Translation', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
             TextField(
-              controller: _textController,
+              controller: _translationController,
               decoration: const InputDecoration(
-                hintText: 'Ecris le texte à traduire',
+                hintText: 'Write the text to translate',
+                border: OutlineInputBorder(),
               ),
+              maxLines: 3,
             ),
             const SizedBox(height: 16),
-            DropdownButton<String>(
-              value: _selectedLanguage,
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedLanguage = newValue!;
-                });
-              },
-              items: _languages.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButton<String>(
+                    value: _selectedLanguage,
+                    isExpanded: true,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedLanguage = newValue!;
+                      });
+                    },
+                    items: _languages.map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _translate,
+                  child: _isLoading ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2)
+                  ) : const Text('Translate'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text('Translation result:', style: Theme.of(context).textTheme.titleMedium),
+            Text(_translatedText),
+            const SizedBox(height: 32),
+            Text('Correction', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _correctionController,
+              decoration: const InputDecoration(
+                hintText: 'Write the text to correct',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _translate,
-              child: const Text('Traduire'),
+              onPressed: _isLoading ? null : _correctText,
+              child: _isLoading ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2)
+              ) : const Text('Correct'),
             ),
             const SizedBox(height: 16),
-            Text('Traduction ($_selectedLanguage): $_translatedText'),
+            Text('Correction result:', style: Theme.of(context).textTheme.titleMedium),
+            Text(_correctedText),
           ],
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _translationController.dispose();
+    _correctionController.dispose();
+    super.dispose();
   }
 }
