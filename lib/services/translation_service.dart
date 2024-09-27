@@ -25,11 +25,11 @@ class TranslationService {
             {
               "role": "system",
               "content":
-                  "You are a translator. Translate the user's text to $targetLanguage."
+                  "You are a translator. Translate the following text to $targetLanguage. Do not add any explanations or additional content. Translate word-for-word if necessary."
             },
             {"role": "user", "content": text}
           ],
-          "temperature": 0.7,
+          "temperature": 0.1,
           "max_tokens": 1000,
         }),
       );
@@ -39,8 +39,13 @@ class TranslationService {
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(utf8.decode(response.bodyBytes));
-        final translation = jsonResponse['choices'][0]['message']['content'];
-        _logger.i('Traduction réussie: $translation');
+        String translation =
+            jsonResponse['choices'][0]['message']['content'].trim();
+
+        // Vérification côté client
+        translation = _verifyTranslation(text, translation, targetLanguage);
+
+        _logger.i('Traduction vérifiée: $translation');
         return translation;
       } else {
         _logger.e('Erreur API: ${response.statusCode} ${response.body}');
@@ -51,5 +56,36 @@ class TranslationService {
           .e('Exception lors de la traduction: $e\nStack trace: $stackTrace');
       return 'Erreur de traduction: $e';
     }
+  }
+
+  String _verifyTranslation(
+      String original, String translation, String targetLanguage) {
+    // Vérifier si la traduction est significativement plus longue que l'original
+    if (translation.length > original.length * 2) {
+      return 'Erreur : La traduction semble contenir du contenu supplémentaire.';
+    }
+
+    // Vérifier si la traduction contient des mots-clés spécifiques à une recette
+    List<String> recipeKeywords = [
+      'ingrédients',
+      'préparation',
+      'cuisson',
+      'recette',
+      'mélanger',
+      'four'
+    ];
+    for (var keyword in recipeKeywords) {
+      if (translation.toLowerCase().contains(keyword)) {
+        return 'Erreur : La traduction semble contenir des instructions de recette.';
+      }
+    }
+
+    // Vérifier si la traduction contient le texte original
+    if (translation.toLowerCase().contains(original.toLowerCase())) {
+      return 'Erreur : La traduction semble contenir le texte original.';
+    }
+
+    // Si toutes les vérifications passent, retourner la traduction
+    return translation;
   }
 }
