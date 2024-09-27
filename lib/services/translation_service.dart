@@ -17,7 +17,7 @@ class TranslationService {
         Uri.parse(_baseUrl),
         headers: {
           'Authorization': 'Bearer $_apiKey',
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json; charset=UTF-8',
         },
         body: jsonEncode({
           "model": "mixtral-8x7b-32768",
@@ -38,7 +38,7 @@ class TranslationService {
       _logger.d('Corps de la réponse: ${response.body}');
 
       if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
+        final jsonResponse = jsonDecode(utf8.decode(response.bodyBytes));
         final translation = jsonResponse['choices'][0]['message']['content'];
         _logger.i('Traduction réussie: $translation');
         return translation;
