@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/translation_service.dart';
 import '../services/correction_service.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'history_screen.dart'; // Assurez-vous d'avoir ce fichier
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -118,6 +119,15 @@ class HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.language),
             onPressed: () {
               Navigator.pushReplacementNamed(context, '/');
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HistoryScreen()),
+              );
             },
           ),
         ],
