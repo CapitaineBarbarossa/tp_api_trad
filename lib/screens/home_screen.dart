@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/translation_service.dart';
 import '../services/correction_service.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,24 +15,57 @@ class HomeScreenState extends State<HomeScreen> {
   final CorrectionService _correctionService = CorrectionService();
   final TextEditingController _translationController = TextEditingController();
   final TextEditingController _correctionController = TextEditingController();
+  final FlutterTts flutterTts = FlutterTts();
   String _translatedText = '';
   String _correctedText = '';
-  late String _selectedLanguage; // Default language
+  late String _selectedLanguage;
   bool _isLoading = false;
 
-  final List<String> _languages = [
-    'English',
-    'French',
-    'Spanish',
-    'German',
-    'Italian'
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initTts();
+    });
+  }
+
+  void _initTts() async {
+    await flutterTts.setLanguage(_getLanguageCode(_selectedLanguage));
+    await flutterTts.setPitch(1);
+    await flutterTts.setSpeechRate(0.5);
+  }
+
+  String _getLanguageCode(String language) {
+    switch (language) {
+      case 'French':
+        return 'fr-FR';
+      case 'Spanish':
+        return 'es-ES';
+      case 'German':
+        return 'de-DE';
+      case 'Italian':
+        return 'it-IT';
+      default:
+        return 'en-US';
+    }
+  }
+
+  Future<void> _speak(String text) async {
+    await flutterTts.setLanguage(_getLanguageCode(_selectedLanguage));
+    await flutterTts.speak(text);
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _selectedLanguage =
-        ModalRoute.of(context)!.settings.arguments as String? ?? 'English';
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is String) {
+      _selectedLanguage = args;
+      _initTts();
+    } else {
+      _selectedLanguage =
+          'English'; // Default language if no argument is passed
+    }
   }
 
   void _translate() async {
@@ -78,7 +112,7 @@ class HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Translate & Correct App'),
+        title: Text('Translate & Correct to $_selectedLanguage'),
         actions: [
           IconButton(
             icon: const Icon(Icons.language),
@@ -104,42 +138,25 @@ class HomeScreenState extends State<HomeScreen> {
               maxLines: 3,
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButton<String>(
-                    value: _selectedLanguage,
-                    isExpanded: true,
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedLanguage = newValue!;
-                      });
-                    },
-                    items: _languages
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _translate,
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Text('Translate'),
-                ),
-              ],
+            ElevatedButton(
+              onPressed: _isLoading ? null : _translate,
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Translate'),
             ),
             const SizedBox(height: 16),
             Text('Translation result:',
                 style: Theme.of(context).textTheme.titleMedium),
             Text(_translatedText),
+            ElevatedButton(
+              onPressed: _translatedText.isNotEmpty
+                  ? () => _speak(_translatedText)
+                  : null,
+              child: const Text('Listen to translation'),
+            ),
             const SizedBox(height: 32),
             Text('Correction', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
@@ -165,6 +182,12 @@ class HomeScreenState extends State<HomeScreen> {
             Text('Correction result:',
                 style: Theme.of(context).textTheme.titleMedium),
             Text(_correctedText),
+            ElevatedButton(
+              onPressed: _correctedText.isNotEmpty
+                  ? () => _speak(_correctedText)
+                  : null,
+              child: const Text('Listen to correction'),
+            ),
           ],
         ),
       ),
@@ -173,6 +196,7 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    flutterTts.stop();
     _translationController.dispose();
     _correctionController.dispose();
     super.dispose();
