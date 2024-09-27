@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../services/translation_service.dart';
 import '../services/correction_service.dart';
+import '../services/storage_service.dart';
+import '../models/translation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'history_screen.dart'; // Assurez-vous d'avoir ce fichier
+import 'history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,6 +16,7 @@ class HomeScreen extends StatefulWidget {
 class HomeScreenState extends State<HomeScreen> {
   final TranslationService _translationService = TranslationService();
   final CorrectionService _correctionService = CorrectionService();
+  final StorageService _storageService = StorageService();
   final TextEditingController _translationController = TextEditingController();
   final TextEditingController _correctionController = TextEditingController();
   final FlutterTts flutterTts = FlutterTts();
@@ -79,6 +82,12 @@ class HomeScreenState extends State<HomeScreen> {
         setState(() {
           _translatedText = translation;
         });
+        // Sauvegarder la traduction dans l'historique
+        await _storageService.saveTranslation(Translation(
+          originalText: text,
+          translatedText: translation,
+          timestamp: DateTime.now(),
+        ));
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Translation error: $e')),
