@@ -16,7 +16,7 @@ class HomeScreenState extends State<HomeScreen> {
   final TextEditingController _correctionController = TextEditingController();
   String _translatedText = '';
   String _correctedText = '';
-  String _selectedLanguage = 'English'; // Default language
+  late String _selectedLanguage; // Default language
   bool _isLoading = false;
 
   final List<String> _languages = [
@@ -27,12 +27,20 @@ class HomeScreenState extends State<HomeScreen> {
     'Italian'
   ];
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _selectedLanguage =
+        ModalRoute.of(context)!.settings.arguments as String? ?? 'English';
+  }
+
   void _translate() async {
     final text = _translationController.text;
     if (text.isNotEmpty) {
       setState(() => _isLoading = true);
       try {
-        final translation = await _translationService.translate(text, _selectedLanguage);
+        final translation =
+            await _translationService.translate(text, _selectedLanguage);
         setState(() {
           _translatedText = translation;
         });
@@ -51,7 +59,8 @@ class HomeScreenState extends State<HomeScreen> {
     if (text.isNotEmpty) {
       setState(() => _isLoading = true);
       try {
-        final correctedText = await _correctionService.correctText(text, _selectedLanguage);
+        final correctedText =
+            await _correctionService.correctText(text, _selectedLanguage);
         setState(() {
           _correctedText = correctedText;
         });
@@ -70,6 +79,14 @@ class HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Translate & Correct App'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.language),
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, '/');
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -98,7 +115,8 @@ class HomeScreenState extends State<HomeScreen> {
                         _selectedLanguage = newValue!;
                       });
                     },
-                    items: _languages.map<DropdownMenuItem<String>>((String value) {
+                    items: _languages
+                        .map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
                         child: Text(value),
@@ -109,16 +127,18 @@ class HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 16),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _translate,
-                  child: _isLoading ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2)
-                  ) : const Text('Translate'),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Translate'),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            Text('Translation result:', style: Theme.of(context).textTheme.titleMedium),
+            Text('Translation result:',
+                style: Theme.of(context).textTheme.titleMedium),
             Text(_translatedText),
             const SizedBox(height: 32),
             Text('Correction', style: Theme.of(context).textTheme.titleLarge),
@@ -134,14 +154,16 @@ class HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _isLoading ? null : _correctText,
-              child: _isLoading ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2)
-              ) : const Text('Correct'),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Correct'),
             ),
             const SizedBox(height: 16),
-            Text('Correction result:', style: Theme.of(context).textTheme.titleMedium),
+            Text('Correction result:',
+                style: Theme.of(context).textTheme.titleMedium),
             Text(_correctedText),
           ],
         ),
